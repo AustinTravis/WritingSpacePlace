@@ -60,7 +60,7 @@ export default function Header() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <BookOpen className="h-6 w-6" />
-            <span className="text-lg font-semibold">StoryApp</span>
+            <span className="text-lg font-semibold">Writing Space Place</span>
           </div>
         </div>
       </header>
@@ -73,7 +73,7 @@ export default function Header() {
         <div className="flex items-center space-x-2">
           <BookOpen className="h-6 w-6" />
           <Link href="/" className="text-lg font-semibold hover:text-gray-600 transition-colors">
-            StoryApp
+            Writing Space Place
           </Link>
         </div>
         <nav>

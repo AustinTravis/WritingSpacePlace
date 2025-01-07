@@ -4,11 +4,19 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
+type Story = {
+    id: string;
+    title: string;
+    content: string;
+    word_count: number;
+    updated_at: string;
+  }
+
 export default function ViewStory() {
     const params = useParams()
     const router = useRouter()
     const supabase = createClient()
-    const [story, setStory] = useState<any>(null)
+    const [story, setStory] = useState<Story | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, KeyboardEvent } from 'react'
+import { useState, KeyboardEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useEditor, EditorContent, Extension } from '@tiptap/react'

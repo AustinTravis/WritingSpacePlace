@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import StoryCard from '@/components/StoryCard'
 import { Button } from "@/components/ui/button"
-import { PlusCircle, LogOut } from 'lucide-react'
+import { PlusCircle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import LoadingSpinner from '@/components/LoadingSpinner'
 
