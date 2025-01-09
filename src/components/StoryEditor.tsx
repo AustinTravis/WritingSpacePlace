@@ -9,6 +9,7 @@ import CharacterCount from '@tiptap/extension-character-count'
 import TextAlign from '@tiptap/extension-text-align'
 import TextStyle from '@tiptap/extension-text-style'
 import Underline from '@tiptap/extension-underline'
+import PromptSelector from './PromptSelector'
 import {
     Bold,
     Italic,
@@ -21,6 +22,7 @@ import {
     List,
     ListOrdered
 } from 'lucide-react'
+import { generateRandomPrompt } from '@/lib/generatePrompt'
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -85,6 +87,7 @@ type Story = {
     content: string
     genre?: Genre
     tags?: string[]
+    prompt?: string
 }
 
 type StoryEditorProps = {
@@ -100,6 +103,9 @@ export default function StoryEditor({ initialStory }: StoryEditorProps) {
     const [tagInput, setTagInput] = useState('')
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [showPrompt, setShowPrompt] = useState(false)
+    const [generatingPrompt, setGeneratingPrompt] = useState(false)
+    const [currentPrompt, setCurrentPrompt] = useState<string>('')
 
     const editor = useEditor({
         extensions: [
@@ -127,6 +133,26 @@ export default function StoryEditor({ initialStory }: StoryEditorProps) {
             editor.commands.setMark('textStyle', { fontSize: '16' })
         }
     })
+
+    const handleSelectPrompt = (prompt: string) => {
+        setCurrentPrompt(prompt)
+        setShowPrompt(false)
+    }
+
+    const handleRandomPrompt = async () => {
+        setGeneratingPrompt(true)
+        try {
+            const generatedPrompt = await generateRandomPrompt()
+            if (generatedPrompt) {
+                setCurrentPrompt(generatedPrompt)
+            }
+        } catch (error) {
+            console.error('Failed to generate prompt:', error)
+            setError('Failed to generate prompt')
+        } finally {
+            setGeneratingPrompt(false)
+        }
+    }
 
     const setFontSize = (size: string) => {
         const sizeMap: { [key: string]: string } = {
@@ -298,6 +324,41 @@ export default function StoryEditor({ initialStory }: StoryEditorProps) {
                             </div>
                         </div>
                     </div>
+
+                    {/* Prompt Display Section */}
+                    <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-sm font-medium text-gray-700">Prompt</h3>
+                            <button
+                                onClick={handleRandomPrompt}
+                                className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-2"
+                                disabled={generatingPrompt}
+                            >
+                                {generatingPrompt ? 'Generating...' : 'Generate Random'}
+                            </button>
+                        </div>
+                        {currentPrompt ? (
+                            <p className="text-gray-600">{currentPrompt}</p>
+                        ) : (
+                            <p className="text-gray-400 italic">No prompt generated</p>
+                        )}
+                    </div>
+
+                    {/* Prompt Selector Modal */}
+                    {showPrompt && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 max-w-lg w-full m-4">
+                                <h2 className="text-xl font-semibold mb-4">Generate Writing Prompt</h2>
+                                <PromptSelector onSelect={handleSelectPrompt} />
+                                <button
+                                    onClick={() => setShowPrompt(false)}
+                                    className="mt-4 text-gray-600 hover:text-gray-800"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Formatting toolbar */}
                     <div className="border border-gray-300 rounded-t p-2 bg-gray-50 flex flex-wrap gap-2">

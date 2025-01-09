@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Button } from "@/components/ui/button"
 import { BookOpen, PenSquare, LogOut } from 'lucide-react'
+import NewStoryModal from './NewStoryModal'
 
 export default function Header() {
   const router = useRouter()
   const supabase = createClient()
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isNewStoryModalOpen, setIsNewStoryModalOpen] = useState(false)
 
-  // Memoize the checkAuth function
   const checkAuth = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -28,7 +29,6 @@ export default function Header() {
   useEffect(() => {
     checkAuth()
 
-    // Only set up the auth listener if we haven't already
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event) => {
@@ -53,7 +53,6 @@ export default function Header() {
     }
   }
 
-  // Return consistent markup while loading
   if (isLoading) {
     return (
       <header className="w-full py-4 px-6 bg-background border-b">
@@ -79,7 +78,6 @@ export default function Header() {
         <nav>
           <ul className="flex space-x-4">
             {isAuthenticated ? (
-              // Authenticated navigation items
               <>
                 <li>
                   <Button variant="ghost" asChild>
@@ -90,11 +88,12 @@ export default function Header() {
                   </Button>
                 </li>
                 <li>
-                  <Button variant="ghost" asChild>
-                    <Link href="/create">
-                      <PenSquare className="mr-2 h-4 w-4" />
-                      New Story
-                    </Link>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setIsNewStoryModalOpen(true)}
+                  >
+                    <PenSquare className="mr-2 h-4 w-4" />
+                    New Story
                   </Button>
                 </li>
                 <li>
@@ -105,7 +104,6 @@ export default function Header() {
                 </li>
               </>
             ) : (
-              // Non-authenticated navigation items
               <>
                 <li>
                   <Button variant="ghost" asChild>
@@ -126,6 +124,10 @@ export default function Header() {
           </ul>
         </nav>
       </div>
+      <NewStoryModal 
+        isOpen={isNewStoryModalOpen}
+        onClose={() => setIsNewStoryModalOpen(false)}
+      />
     </header>
   )
 }

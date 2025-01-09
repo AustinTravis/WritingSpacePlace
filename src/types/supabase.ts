@@ -7,6 +7,7 @@ export type Story = {
     status: 'draft' | 'published';
     genre?: 'fiction' | 'non-fiction' | 'poetry' | 'mystery' | 'fantasy' | 'sci-fi' | 'romance' | 'thriller' | 'horror' | 'other';
     tags?: string[];
+    prompt?: string
     visibility: 'private' | 'public';
     created_at: string;
     updated_at: string;
