@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { PenLine, Sparkles, Brain, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
-import { generateRandomPrompt } from '@/lib/generatePrompt'
+import { generateRandomPrompt, generateGuidedPrompt } from '@/lib/generatePrompt'
 
 // Define the available story start options
 type StoryStartOption = 'blank' | 'random' | 'guided'
@@ -129,8 +129,18 @@ const formFields = [
 ]
 
 interface NewStoryModalProps {
-    isOpen: boolean
-    onClose: () => void
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+interface GuidedFormData {
+    genre: string;
+    mood: string;
+    mainCharacter: string;
+    setting: string;
+    timePeriod: string;
+    writingStyle: string;
+    conflictType: string;
 }
 
 const NewStoryModal: React.FC<NewStoryModalProps> = ({ isOpen, onClose }) => {
@@ -152,15 +162,6 @@ const NewStoryModal: React.FC<NewStoryModalProps> = ({ isOpen, onClose }) => {
         resetState()
     }, [isOpen])
 
-    // Wrapper for closing the modal that ensures state cleanup
-    const handleClose = () => {
-        setMode(null)
-        setCurrentStep(0)
-        setFormData({})
-        setGeneratingPrompt(false)
-        onClose()
-    }
-
     // Handle random prompt generation
     const handleRandomPrompt = async () => {
         setGeneratingPrompt(true)
@@ -169,24 +170,38 @@ const NewStoryModal: React.FC<NewStoryModalProps> = ({ isOpen, onClose }) => {
             if (generatedPrompt) {
                 localStorage.setItem('writing_prompt', generatedPrompt)
                 router.push('/create')
+                onClose() // Close modal after successful prompt generation
             }
         } catch (error) {
             console.error('Failed to generate prompt:', error)
         } finally {
             setGeneratingPrompt(false)
-            handleClose()
         }
     }
 
     // Handle guided prompt submission
-    const handleGuidedSubmit = async (formData: Record<string, string>) => {
+    const handleGuidedSubmit = async (formData: GuidedFormData) => {
+        setGeneratingPrompt(true)
         try {
-            const prompt = `Write a ${formData.genre} story with a ${formData.mood} tone, featuring a ${formData.mainCharacter} in a ${formData.setting} during ${formData.timePeriod}. The story should be written in a ${formData.writingStyle} and focus on a ${formData.conflictType} conflict.`
-            localStorage.setItem('writing_prompt', prompt)
-            router.push('/create')
-            handleClose()
+            const generatedPrompt = await generateGuidedPrompt({
+                genre: formData.genre,
+                mood: formData.mood,
+                mainCharacter: formData.mainCharacter,
+                setting: formData.setting,
+                timePeriod: formData.timePeriod,
+                writingStyle: formData.writingStyle,
+                conflictType: formData.conflictType
+            });
+
+            if (generatedPrompt) {
+                localStorage.setItem('writing_prompt', generatedPrompt)
+                router.push('/create')
+                onClose()
+            }
         } catch (error) {
-            console.error('Failed to process guided prompt:', error)
+            console.error('Failed to generate guided prompt:', error)
+        } finally {
+            setGeneratingPrompt(false)
         }
     }
 
@@ -198,7 +213,37 @@ const NewStoryModal: React.FC<NewStoryModalProps> = ({ isOpen, onClose }) => {
     // Handle form submission
     const handleSubmitForm = (e: React.FormEvent) => {
         e.preventDefault()
-        handleGuidedSubmit(formData)
+
+        // Validate that all required fields are present
+        const requiredFields = [
+            'genre',
+            'mood',
+            'mainCharacter',
+            'setting',
+            'timePeriod',
+            'writingStyle',
+            'conflictType'
+        ];
+
+        const guidedFormData: GuidedFormData = {
+            genre: formData.genre || '',
+            mood: formData.mood || '',
+            mainCharacter: formData.mainCharacter || '',
+            setting: formData.setting || '',
+            timePeriod: formData.timePeriod || '',
+            writingStyle: formData.writingStyle || '',
+            conflictType: formData.conflictType || ''
+        };
+
+        // Check if all required fields are filled
+        const isValid = requiredFields.every(field => !!formData[field]);
+
+        if (isValid) {
+            handleGuidedSubmit(guidedFormData);
+        } else {
+            console.error('Missing required fields');
+            // Optionally add error handling here
+        }
     }
 
     // Render the content based on current mode and step
@@ -232,8 +277,8 @@ const NewStoryModal: React.FC<NewStoryModalProps> = ({ isOpen, onClose }) => {
                         >
                             <option value="">Select {formFields[currentStep].label}</option>
                             {formFields[currentStep].options.map((option) => (
-                                <option 
-                                    key={option} 
+                                <option
+                                    key={option}
                                     value={option.toLowerCase().replace(/ /g, '-')}
                                 >
                                     {option}
@@ -290,7 +335,7 @@ const NewStoryModal: React.FC<NewStoryModalProps> = ({ isOpen, onClose }) => {
                     className="p-8"
                     onClick={() => {
                         router.push('/create')
-                        handleClose()
+                        onClose()
                     }}
                 >
                     <PenLine className="mr-2 h-5 w-5" />
@@ -311,6 +356,7 @@ const NewStoryModal: React.FC<NewStoryModalProps> = ({ isOpen, onClose }) => {
                     variant="outline"
                     className="p-8"
                     onClick={() => setMode('guided')}
+                    disabled={generatingPrompt}
                 >
                     <Brain className="mr-2 h-5 w-5" />
                     Guided Prompt
@@ -320,7 +366,7 @@ const NewStoryModal: React.FC<NewStoryModalProps> = ({ isOpen, onClose }) => {
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={handleClose}>
+        <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Start Your Story</DialogTitle>

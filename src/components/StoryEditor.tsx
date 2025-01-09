@@ -1,5 +1,5 @@
 'use client'
-import { useState, KeyboardEvent } from 'react'
+import { useState, KeyboardEvent, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useEditor, EditorContent, Extension } from '@tiptap/react'
@@ -22,7 +22,8 @@ import {
     List,
     ListOrdered
 } from 'lucide-react'
-import { generateRandomPrompt } from '@/lib/generatePrompt'
+import { generateRandomPrompt, generateGuidedPrompt } from '@/lib/generatePrompt'
+
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -107,6 +108,19 @@ export default function StoryEditor({ initialStory }: StoryEditorProps) {
     const [generatingPrompt, setGeneratingPrompt] = useState(false)
     const [currentPrompt, setCurrentPrompt] = useState<string>(initialStory?.prompt || '')
 
+    useEffect(() => {
+        // Small timeout to ensure localStorage is checked after navigation
+        const timeoutId = setTimeout(() => {
+            const savedPrompt = localStorage.getItem('writing_prompt')
+            if (savedPrompt) {
+                setCurrentPrompt(savedPrompt)
+                localStorage.removeItem('writing_prompt') // Clear after setting
+            }
+        }, 100)
+
+        return () => clearTimeout(timeoutId)
+    }, [])
+
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -137,6 +151,29 @@ export default function StoryEditor({ initialStory }: StoryEditorProps) {
     const handleSelectPrompt = (prompt: string) => {
         setCurrentPrompt(prompt)
         setShowPrompt(false)
+    }
+
+    const handleGuidedPrompt = async (formData: {
+        genre: string;
+        mood: string;
+        mainCharacter: string;
+        setting: string;
+        timePeriod: string;
+        writingStyle: string;
+        conflictType: string;
+    }) => {
+        setGeneratingPrompt(true)
+        try {
+            const generatedPrompt = await generateGuidedPrompt(formData)
+            if (generatedPrompt) {
+                setCurrentPrompt(generatedPrompt)
+            }
+        } catch (error) {
+            console.error('Failed to generate guided prompt:', error)
+            setError('Failed to generate prompt')
+        } finally {
+            setGeneratingPrompt(false)
+        }
     }
 
     const handleRandomPrompt = async () => {
@@ -215,8 +252,7 @@ export default function StoryEditor({ initialStory }: StoryEditorProps) {
                 word_count: wordCount,
                 genre,
                 tags,
-                // Add the prompt to the story data
-                prompt: currentPrompt || null, // Use null if no prompt is set
+                prompt: currentPrompt || null, // Include the prompt in saved data
                 updated_at: new Date().toISOString()
             }
 
@@ -331,13 +367,6 @@ export default function StoryEditor({ initialStory }: StoryEditorProps) {
                     <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex justify-between items-center mb-2">
                             <h3 className="text-sm font-medium text-gray-700">Prompt</h3>
-                            <button
-                                onClick={handleRandomPrompt}
-                                className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-2"
-                                disabled={generatingPrompt}
-                            >
-                                {generatingPrompt ? 'Generating...' : 'Generate Random'}
-                            </button>
                         </div>
                         {currentPrompt ? (
                             <p className="text-gray-600">{currentPrompt}</p>
