@@ -105,7 +105,7 @@ export default function StoryEditor({ initialStory }: StoryEditorProps) {
     const [error, setError] = useState<string | null>(null)
     const [showPrompt, setShowPrompt] = useState(false)
     const [generatingPrompt, setGeneratingPrompt] = useState(false)
-    const [currentPrompt, setCurrentPrompt] = useState<string>('')
+    const [currentPrompt, setCurrentPrompt] = useState<string>(initialStory?.prompt || '')
 
     const editor = useEditor({
         extensions: [
@@ -215,6 +215,8 @@ export default function StoryEditor({ initialStory }: StoryEditorProps) {
                 word_count: wordCount,
                 genre,
                 tags,
+                // Add the prompt to the story data
+                prompt: currentPrompt || null, // Use null if no prompt is set
                 updated_at: new Date().toISOString()
             }
 
